@@ -3,8 +3,8 @@
 #include <linux/cdev.h>
 
 struct mymodule_qset {
-	void** data;
-	struct mymodule_qset* next;
+    void** data;
+    struct mymodule_qset* next;
 };
 
 struct mymodule_dev {
@@ -16,4 +16,7 @@ struct mymodule_dev {
         struct mutex mutex;
         struct cdev cdev;
 };
+
+extern int device_count;
+extern struct mymodule_dev* mymodule_devices;
 #endif

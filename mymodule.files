@@ -2,4 +2,6 @@ Makefile
 module.c
 operations.c
 operations.h
+proc.c
+proc.h
 types.h
