@@ -1,4 +1,5 @@
 #include "operations.h"
+#include <linux/fs.h>
 #include <linux/kernel.h>
 #include <linux/slab.h>
 #include <linux/version.h>
