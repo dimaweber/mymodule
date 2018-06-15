@@ -1,4 +1,5 @@
 #include "operations.h"
+
 #include <linux/kernel.h>
 #include <linux/slab.h>
 #include <linux/version.h>
@@ -7,11 +8,6 @@
 #else
 #  include <linux/uaccess.h>
 #endif
-
-extern int mymodule_quantum;
-extern int mymodule_qset;
-extern int device_major;
-extern int device_first_minor;
 
 static struct mymodule_qset* mymodule_follow(struct mymodule_dev* dev, int item)
 {
@@ -212,12 +208,17 @@ static loff_t mymodule_llseek(struct file * filp, loff_t off, int whence)
     return newpos;
 }
 
+long mymodule_ioctl (struct file* filp, unsigned int cmd, unsigned long arg)
+{
+    return -EINVAL;
+}
+
 struct file_operations mymodule_fops = {
     .owner   = THIS_MODULE,
     .llseek  = mymodule_llseek,
     .read    = mymodule_read,
     .write   = mymodule_write,
-    //	.unlocked_ioctl   = mymodule_ioctl,
+    .unlocked_ioctl   = mymodule_ioctl,
     .open    = mymodule_open,
     .release = mymodule_release,
 };

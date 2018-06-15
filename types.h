@@ -2,6 +2,11 @@
 #define _TYPES_H
 #include <linux/cdev.h>
 
+extern int mymodule_quantum;
+extern int mymodule_qset;
+extern int device_major;
+extern int device_first_minor;
+
 struct mymodule_qset {
     void** data;
     struct mymodule_qset* next;

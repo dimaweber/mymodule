@@ -45,7 +45,9 @@ static void  mymodule_exit(void)
     {
         for (i=0; i<device_count; i++)
         {
+            mutex_lock(&mymodule_devices[i].mutex);
             mymodule_trim(mymodule_devices + i);
+            mutex_unlock(&mymodule_devices[i].mutex);
             cdev_del(&mymodule_devices[i].cdev);
         }
         kfree(mymodule_devices);
