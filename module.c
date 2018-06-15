@@ -22,8 +22,8 @@ MODULE_LICENSE("Dual BSD/GPL");
 #define DEVICE_NAME_PREFIX "mym"
 
 int device_count = DFLT_DEVICE_COUNT;
-static int device_major = DFLT_DEVICE_MAJOR;
-static int device_first_minor = DFLT_DEVICE_MINOR;
+int device_major = DFLT_DEVICE_MAJOR;
+int device_first_minor = DFLT_DEVICE_MINOR;
 int mymodule_quantum = 4096;
 int mymodule_qset = 1024;
 
@@ -34,29 +34,6 @@ module_param(mymodule_quantum, int, S_IRUGO);
 module_param(mymodule_qset, int, S_IRUGO);
 
 dev_t device;
-
-struct file_operations mymodule_fops = {
-    .owner   = THIS_MODULE,
-//	.llseek  = mymodule_llseek,
-    .read    = mymodule_read,
-    .write   = mymodule_write,
-//	.unlocked_ioctl   = mymodule_ioctl,
-    .open    = mymodule_open,
-    .release = mymodule_release,
-};
-
-static void mymodule_setup_cdev(struct mymodule_dev* m_dev, int index)
-{
-    int err;
-    int devno = MKDEV(device_major, device_first_minor + index);
-
-    cdev_init(&m_dev->cdev, &mymodule_fops);
-    m_dev->cdev.owner = THIS_MODULE;
-    m_dev->cdev.ops   = &mymodule_fops;
-    err = cdev_add(&m_dev->cdev, devno, 1);
-    if (err)
-        printk(KERN_NOTICE "Error %d adding mym%i", err, index);
-}
 
 struct mymodule_dev* mymodule_devices = NULL;
 

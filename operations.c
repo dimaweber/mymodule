@@ -10,8 +10,10 @@
 
 extern int mymodule_quantum;
 extern int mymodule_qset;
+extern int device_major;
+extern int device_first_minor;
 
-struct mymodule_qset* mymodule_follow(struct mymodule_dev* dev, int item)
+static struct mymodule_qset* mymodule_follow(struct mymodule_dev* dev, int item)
 {
     struct mymodule_qset* dptr = dev->data;
     if (!dptr)
@@ -64,7 +66,7 @@ int mymodule_trim(struct mymodule_dev* dev)
     return 0;
 }
 
-int mymodule_open(struct inode* inode, struct file* filp)
+static int mymodule_open(struct inode* inode, struct file* filp)
 {
     if (!filp->private_data)
     {
@@ -81,12 +83,12 @@ int mymodule_open(struct inode* inode, struct file* filp)
     return 0;
 }
 
-int mymodule_release(struct inode* inode, struct file* filp)
+static int mymodule_release(struct inode* inode, struct file* filp)
 {
     return 0;
 }
 
-ssize_t mymodule_read(struct file* filp, char __user* buffer, size_t count, loff_t* f_pos)
+static ssize_t mymodule_read(struct file* filp, char __user* buffer, size_t count, loff_t* f_pos)
 {
     struct mymodule_dev* dev = filp->private_data;
     struct mymodule_qset* dptr = dev->data;
@@ -130,7 +132,7 @@ ssize_t mymodule_read(struct file* filp, char __user* buffer, size_t count, loff
     return retval;
 }
 
-ssize_t mymodule_write(struct file* filp, const char __user* buff, size_t count, loff_t* f_pos)
+static ssize_t mymodule_write(struct file* filp, const char __user* buff, size_t count, loff_t* f_pos)
 {
     struct mymodule_dev* dev = filp->private_data;
     struct mymodule_qset* dptr;
@@ -184,4 +186,51 @@ ssize_t mymodule_write(struct file* filp, const char __user* buff, size_t count,
     out:
     mutex_unlock(&dev->mutex);
     return retval;
+}
+
+static loff_t mymodule_llseek(struct file * filp, loff_t off, int whence)
+{
+    struct mymodule_dev* dev = filp->private_data;
+    loff_t newpos;
+    switch (whence)
+    {
+        case 0:
+            newpos = off;
+            break;
+        case 1:
+            newpos = filp->f_pos + off;
+            break;
+        case 2:
+            newpos = dev->size + off;
+            break;
+        default:
+            return -EINVAL;
+    }
+    if (newpos < 0)
+        return -EINVAL;
+    filp->f_pos = newpos;
+    return newpos;
+}
+
+struct file_operations mymodule_fops = {
+    .owner   = THIS_MODULE,
+    .llseek  = mymodule_llseek,
+    .read    = mymodule_read,
+    .write   = mymodule_write,
+    //	.unlocked_ioctl   = mymodule_ioctl,
+    .open    = mymodule_open,
+    .release = mymodule_release,
+};
+
+void mymodule_setup_cdev(struct mymodule_dev* m_dev, int index)
+{
+    int err;
+    int devno = MKDEV(device_major, device_first_minor + index);
+
+    cdev_init(&m_dev->cdev, &mymodule_fops);
+    m_dev->cdev.owner = THIS_MODULE;
+    m_dev->cdev.ops   = &mymodule_fops;
+    err = cdev_add(&m_dev->cdev, devno, 1);
+    if (err)
+        printk(KERN_NOTICE "Error %d adding mym%i", err, index);
 }
