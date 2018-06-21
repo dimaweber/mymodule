@@ -14,18 +14,11 @@
 
 MODULE_LICENSE("Dual BSD/GPL");
 
-#define DFLT_DEVICE_COUNT 10
-#define DFLT_DEVICE_MAJOR 0
-#define DEVICE_STATIC_MAJOR 32
-#define DFLT_DEVICE_MINOR 0
-
-#define DEVICE_NAME_PREFIX "mym"
-
 int device_count = DFLT_DEVICE_COUNT;
 int device_major = DFLT_DEVICE_MAJOR;
 int device_first_minor = DFLT_DEVICE_MINOR;
-int mymodule_quantum = 4096;
-int mymodule_qset = 1024;
+int mymodule_quantum = DFLT_MYMODULE_QUANTUM;
+int mymodule_qset = DFLT_MYMODULE_QSET;
 
 module_param(device_count, int, S_IRUGO);
 module_param(device_major, int, S_IRUGO);

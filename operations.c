@@ -210,7 +210,89 @@ static loff_t mymodule_llseek(struct file * filp, loff_t off, int whence)
 
 long mymodule_ioctl (struct file* filp, unsigned int cmd, unsigned long arg)
 {
-    return -EINVAL;
+    long retval = -EINVAL;
+    long tmp;
+    long err = 0;
+
+    if (    _IOC_TYPE(cmd) != MYMODULE_IOC_MAGIC
+        ||  _IOC_NR(cmd) > MYMODULE_IOC_MAXNR)
+        return retval;
+
+    if (_IOC_DIR(cmd) & _IOC_READ)
+        err = !access_ok(VERIFY_WRITE, (void __user*)arg, _IOC_SIZE(cmd));
+    else if (_IOC_DIR(cmd) & _IOC_WRITE)
+        err = !access_ok(VERIFY_READ, (void* __user*)arg, _IOC_SIZE(cmd));
+    if (err)
+        return -EFAULT;
+
+    switch(cmd)
+    {
+        case MYMODULE_IOCRESET:
+            mymodule_quantum = DFLT_MYMODULE_QUANTUM;
+            mymodule_qset    = DFLT_MYMODULE_QSET;
+            break;
+        case MYMODULE_IOCSQUANTUM:
+            if (!capable(CAP_SYS_ADMIN))
+                return -EPERM;
+            retval = __get_user(mymodule_quantum, (int __user*)arg);
+            break;
+        case MYMODULE_IOCSQSET:
+            if (!capable(CAP_SYS_ADMIN))
+                return -EPERM;
+            retval = __get_user(mymodule_qset, (int __user*)arg);
+            break;
+        case MYMODULE_IOCTQUANTUM:
+            if (!capable(CAP_SYS_ADMIN))
+                return -EPERM;
+            mymodule_quantum = arg;
+            break;
+        case MYMODULE_IOCTQSET:
+            if (!capable(CAP_SYS_ADMIN))
+                return -EPERM;
+            mymodule_qset = arg;
+            break;
+        case MYMODULE_IOCGQUANTUM:
+            retval = __put_user(mymodule_quantum, (int __user*)arg);
+            break;
+        case MYMODULE_IOCGQSET:
+            retval = __put_user(mymodule_qset, (int __user*)arg);
+            break;
+        case MYMODULE_IOCQQUANTUM:
+            retval = mymodule_quantum;
+        case MYMODULE_IOCQQSET:
+            retval = mymodule_qset;
+        case MYMODULE_IOCXQUANTUM:
+            if (!capable(CAP_SYS_ADMIN))
+                return -EPERM;
+            tmp = mymodule_quantum;
+            retval = __get_user(mymodule_quantum, (int __user*)arg);
+            if (!retval)
+                retval = __put_user(tmp, (int __user*)arg);
+            break;
+        case MYMODULE_IOCXQSET:
+            if (!capable(CAP_SYS_ADMIN))
+                return -EPERM;
+            tmp = mymodule_qset;
+            retval = __get_user(mymodule_qset, (int __user*)arg);
+            if (!retval)
+                retval = __put_user(tmp, (int __user*)arg);
+            break;
+        case MYMODULE_IOCHQUANTUM:
+            if (!capable(CAP_SYS_ADMIN))
+                return -EPERM;
+            tmp = mymodule_quantum;
+            mymodule_quantum = arg;
+            retval = tmp;
+        case MYMODULE_IOCHQSET:
+            if (!capable(CAP_SYS_ADMIN))
+                return -EPERM;
+            tmp = mymodule_qset;
+            mymodule_qset = arg;
+            retval = tmp;
+        default:
+            retval = -ENOTTY;
+    }
+    return retval;
 }
 
 struct file_operations mymodule_fops = {
